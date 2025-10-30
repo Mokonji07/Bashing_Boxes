@@ -11,7 +11,52 @@ menu_of_possibilities=("1. Print list"
 "6. exit")
 echo "${menu_of_possibilities[@]}"
 read -p "choose an option [1-6]:" menu
-touch safe.txt
+mkdir /Bashing_Boxes/Bashing_Boxes/Data
+SOURCE_FILE="mytext.txt"                           
+DEST_DIR="$HOME/Bashing_Boxes/Bashing_Boxes/Data"
+mkdir -p "$DEST_DIR"
+
+Save_List_after() {    
+    count=$(ls "$DEST_DIR"/edited_file_* 2>/dev/null | wc -l)
+    next_num=$((count + 1))
+    edited_file_="$DEST_DIR/edited_file_${next_num}.txt"
+    printf "%s\n" "${array_of_things[@]}" > "$edited_file_"
+    echo "Saved new version: $edited_file"
+}
+
+load_previous() {
+    files=("$DEST_DIR"/edited_file_*.txt)
+    if [[ ${#files[@]} -eq 0 ]]; then
+        echo "No saved list found"
+        return
+    fi
+    echo "Saved List"
+    for i in "${!files[@]}"; do 
+        echo "$((i+1)). ${files[$i]##*/}"
+    done
+
+    read -p "Enter the number of the file to load: " file_num
+    if [[ "$file_num" =~ ^[0-9]+$ ]] && (( file_num >= 1 && file_num <= ${#files[@]} )); then
+        file_to_load="${files[$((file_num-1))]}"
+        mapfile -t array_of_things < "$file_to_load"
+        echo "Loaded list from ${file_to_load##*/}:"
+        echo "${array_of_things[@]}"
+    else
+        echo "Invalid"
+    fi
+}
+
+print_made_lists() {
+    files=("$DEST_DIR"/edited_file_*.txt)
+    if [[ ${#files[@]} -eq 0 ]]; then
+        echo "No saved files found."
+        exit 0
+fi
+ echo "Saved Files"
+ for file in "${files[@]}"; do
+    exho " - ${file##*/}"
+done
+}
 
 what_to_do_after() {
     should_i=("1. save list" 
@@ -21,7 +66,12 @@ what_to_do_after() {
     echo "${should_i[@]}"
     read -p "what next: " next
     if [[ "$next" -eq 1 ]]; then
-        echo "${array_of_things[@]}" > safe.txt
+        Save_List_after
+    elif [[ "$next" -eq 2 ]]; then
+        load_previous
+    elif [[ "$next" -eq 3 ]]; then
+        print_made_lists
+
     elif [[ "$next" -eq 4 ]]; then
         exit 1
     fi
