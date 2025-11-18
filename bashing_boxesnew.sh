@@ -1,6 +1,8 @@
 #!/bin/bash
 DEST_DIR="$HOME/Bashing_Boxes/Bashing_Boxes/Data"
 mkdir -p "$DEST_DIR"
+SAVED_LIST="saved_list.txt"
+
 
 array_of_things=(
     "mal" 
@@ -16,12 +18,13 @@ array_of_things=(
 )
 
 menu_of_input_valuesibilities=(
-    "1. Print list"
-    "2. Print item at X position in list"
-    "3. Add item to list"
-    "4. Remove last item from list"
-    "5. Remove item from X position"
-    "6. Exit"
+    "1. Print list\n"
+    "2. Print item at X position in list\n"
+    "3. Add item to list\n"
+    "4. Remove last item from list\n"
+    "5. Remove item from X position\n"
+    "6. Exit\n"
+    "7. Generate random box from file\n"
 )
 
 save_list_menu=(
@@ -44,7 +47,7 @@ display_array(){
 display_menu_of_input_valuesibilities(){
     echo "Main Menu"
     echo "====================="
-    echo "${menu_of_input_valuesibilities[@]}"
+    echo -e "${menu_of_input_valuesibilities[@]}"
 }
 
 display_save_list_menu(){
@@ -108,13 +111,31 @@ exit_program(){
     exit 0
 }
 
-save_list(){
+save_list_lazy(){
     count=$(ls "$DEST_DIR"/edited_file_* 2>/dev/null | wc -l)
     next_num=$((count + 1))
     edited_file_="$DEST_DIR/edited_file_${next_num}.txt"
     printf "%s\n" "${array_of_things[@]}" > "$edited_file_"
     echo "Saved new version: $edited_file_"
 }
+
+save_current_list(){
+    printf "%s\n" "${array_of_things[@]}" > "$SAVED_LIST"
+    echo "List saved to $SAVED_LIST"
+}
+
+save_list(){
+    read -p "Do you want to save to the default file? (y/n): " enter
+    if [[ "$enter" == "Y" || "$enter" == "y" ]]; then
+        save_current_list
+    else
+        save_list_lazy
+    fi
+}
+
+
+
+
 
 print_made_lists(){
     files=("$DEST_DIR"/edited_file_*.txt)
@@ -164,11 +185,47 @@ esac
         #statements
     fi
 }
+
+Generate_random_box_from_file(){
+    box_array=()
+    ls 
+    read -p "Enter file name" box
+    if [[ $box == "box" || $box == "box.txt" ]]; then # -f "$box_file"
+        mapfile -t box_array < <(grep -vE '^\s*$|^\s*#' box.txt)
+        box_size
+    else
+        echo "invalid"
+    fi
+}
+box_size(){
+    read -p "How many items do you want in box? " number
+
+    if [[ "$number" =~ ^[0-9]+$ && "$number" -le ${#box_array[@]} ]]; then
+        mapfile -t shuffled < <(printf "%s\n" "${box_array[@]}" | shuf -n "$number")
+
+        printf "%s\n" "${shuffled[@]}"
+
+        array_of_things=("${shuffled[@]:0:number}")
+
+        display_menu_of_input_valuesibilities
+        read -p "what do you want? " input_value
+        final
+    else
+        echo "Invalid amount"
+        Generate_random_box_from_file
+    fi
+}
+
+
+
+
+
+
 # Display menus and get input
 display_menu_of_input_valuesibilities
 get_user_input
-
-case $input_value in
+final(){
+    case $input_value in
     1) print_list 
        what_next
        ;;
@@ -185,6 +242,7 @@ case $input_value in
        what_next
        ;;
     6) exit_program ;;
+    7) Generate_random_box_from_file;;
     A|a) save_list ;;
     B|b) load_previous ;;
     C|c) print_made_lists ;;
@@ -193,3 +251,6 @@ case $input_value in
         echo "Invalid"
         exit_program ;;
 esac
+
+}
+final
